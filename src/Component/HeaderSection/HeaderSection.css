@@ -1,0 +1,10 @@
+.navigation__wrapper {
+    width: 100%;
+}
+
+.navigation__wrapper ul {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    cursor: pointer;
+}
