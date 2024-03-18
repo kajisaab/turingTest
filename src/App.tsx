@@ -4,6 +4,7 @@ import Home from './Home';
 import About from './About';
 import UserList from './User/UserList';
 import UserCategory from './User/UserCategory';
+import IndividualUserDetails from './User/IndividualUserDetails';
 
 function App() {
     return (
@@ -11,6 +12,7 @@ function App() {
             <Route path='/' element={<Home />} />
             <Route path='/user'>
                 <Route index element={<UserList />} />
+                <Route path=':id' element={<IndividualUserDetails />} />
                 <Route path='grid' element={<UserCategory />} />
             </Route>
             <Route path='/about' element={<About />} />

@@ -1,11 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from 'react';
 interface apiProps {
-    endpoint: string;
+    endpoint: string | null;
     pathVariable?: null | Record<string, string | number>;
     queryParameter?: null | Record<string, string | number>;
-    onSuccess: (response: unknown) => void;
-    onError?: (err: unknown) => void;
+    onSuccess: (response: any) => void;
+    onError?: (err: any) => void;
 }
 
 function useApi(props: apiProps) {
@@ -16,6 +17,9 @@ function useApi(props: apiProps) {
     const [loading, setLoading] = useState<boolean>(false);
 
     useEffect(() => {
+        if (!endpoint) {
+            return;
+        }
         const abortController = new AbortController();
         const signal = abortController.signal;
 
