@@ -13,15 +13,13 @@ function IndividualUserDetails() {
 
     const { response, loading } = useApi({
         endpoint: requestPayload.endpoint,
-        onSuccess: (response) => {
-            console.log({ response });
+        onSuccess: () => {
             setRequestPayload({
                 endpoint: null,
             });
         },
     });
 
-    console.log({ response });
     return !loading ? (
         <div>{JSON.stringify(response)}</div>
     ) : (

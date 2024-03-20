@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import HeaderSection from '../../Component/HeaderSection';
 import useApi from '../../hooks/useApi';
 import './UserList.css';
@@ -33,8 +33,30 @@ function UserList() {
         total: 0,
     });
     const [userDetails, setUserDetails] = useState<any[]>([]);
-
+    const [openSortingOption, setOpenSortingOption] = useState(false);
+    const sortingDropdownRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (
+                sortingDropdownRef.current &&
+                !sortingDropdownRef.current.contains(event.target as Node)
+            ) {
+                setOpenSortingOption(false);
+            }
+        }
+
+        document.addEventListener('click', handleClickOutside);
+
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    });
+
+    const toggleSortingDropdown = () => {
+        setOpenSortingOption(!openSortingOption);
+    };
 
     const { response, loading } = useApi({
         endpoint: requestPayload.endpoint,
@@ -62,19 +84,20 @@ function UserList() {
     let debounceTimeout: any;
 
     const handleInputChange = (event: any) => {
-        const query = event.target.value;
+        const query = event.target.value.replace(/[+\-*/]/g, '').toLowerCase();
         clearTimeout(debounceTimeout);
         debounceTimeout = setTimeout(() => {
             // Here you can perform your search action, for example, fetching data from an API
             // For demonstration purposes, let's just log the search query
-            console.log('Searching for:', query);
-
             if (query.length > 0) {
                 const filteredData = userDetails.filter(
-                    ({ firstName, lastName, macAddress, university }) =>
-                        `${firstName} ${lastName}`.includes(query) ||
-                        macAddress.includes(query) ||
-                        university.includes(query)
+                    ({ firstName, lastName, macAddress, university, phone }) =>
+                        `${firstName} ${lastName}`
+                            .toLowerCase()
+                            .includes(query) ||
+                        macAddress.toLowerCase().includes(query) ||
+                        university.toLowerCase().includes(query) ||
+                        phone.includes(query)
                 );
                 setUserDetails([...filteredData]);
                 return;
@@ -83,11 +106,66 @@ function UserList() {
         }, 1000); // Adjust the debounce delay as needed
     };
 
+    const handleSorting = (sortingType: string) => {
+        toggleSortingDropdown();
+
+        if (sortingType.toLowerCase() === 'asc') {
+            userDetails.sort((before, after) => {
+                const nameA = before.firstName.toLowerCase();
+                const nameB = after.firstName.toLowerCase();
+
+                if (nameA < nameB) {
+                    return -1;
+                }
+                if (nameA > nameB) {
+                    return 1;
+                }
+
+                return 0;
+            });
+        } else {
+            userDetails.sort((before, after) => {
+                const nameA = before.firstName.toLowerCase();
+                const nameB = after.firstName.toLowerCase();
+
+                if (nameA < nameB) {
+                    return 1;
+                }
+                if (nameA > nameB) {
+                    return -1;
+                }
+                return 0;
+            });
+        }
+    };
+
+    const getSNValue = (incremental: number) => {
+        return paginationValue.skip * paginationValue.limit + incremental + 1;
+    };
+
     return (
         <section className='user__page__wrapper'>
             <HeaderSection />
             <div className='user__search__table__wrapper'>
-                <input type='text' onChange={handleInputChange} />
+                <div className='user__search__text__container'>
+                    <input type='text' onChange={handleInputChange} />
+                </div>
+                <div
+                    className='user__sorting__button__container'
+                    ref={sortingDropdownRef}
+                >
+                    <button onClick={toggleSortingDropdown}>Sorting</button>
+                    {openSortingOption && (
+                        <div className='sorting__dropdown__container__wrapper'>
+                            <span onClick={() => handleSorting('asc')}>
+                                A-Z
+                            </span>
+                            <span onClick={() => handleSorting('dsc')}>
+                                Z-A
+                            </span>
+                        </div>
+                    )}
+                </div>
             </div>
             <div className='user__table__wrapper__container'>
                 {!loading ? (
@@ -101,31 +179,33 @@ function UserList() {
                                 <th>University</th>
                             </thead>
                             <tbody>
-                                {userList.map((userData: any) => (
-                                    <tr
-                                        key={userData.id}
-                                        onClick={() =>
-                                            navigate(`${userData.id}`)
-                                        }
-                                    >
-                                        <td>{userData.id}</td>
-                                        <td>
-                                            <div className='user__column__section'>
-                                                <img
-                                                    src={userData.image}
-                                                    alt='user'
-                                                />
-                                                <div className='name__section'>
-                                                    {userData.firstName}{' '}
-                                                    {userData.lastName}
+                                {userList.map(
+                                    (userData: any, index: number) => (
+                                        <tr
+                                            key={userData.id}
+                                            onClick={() =>
+                                                navigate(`${userData.id}`)
+                                            }
+                                        >
+                                            <td>{getSNValue(index)}</td>
+                                            <td>
+                                                <div className='user__column__section'>
+                                                    <img
+                                                        src={userData.image}
+                                                        alt='user'
+                                                    />
+                                                    <div className='name__section'>
+                                                        {userData.firstName}{' '}
+                                                        {userData.lastName}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td>{userData.macAddress}</td>
-                                        <td>{userData.phone}</td>
-                                        <td>{userData.university}</td>
-                                    </tr>
-                                ))}
+                                            </td>
+                                            <td>{userData.macAddress}</td>
+                                            <td>{userData.phone}</td>
+                                            <td>{userData.university}</td>
+                                        </tr>
+                                    )
+                                )}
                             </tbody>
                         </table>
                     </div>
